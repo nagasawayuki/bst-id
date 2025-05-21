@@ -16,21 +16,6 @@ pip install git+https://github.com/nagasawayuki/bst-id.git
 
 ---
 
-## 🛠️ Setup
-
-Ensure your environment meets the following requirements:
-
-* Python 3.8 or higher
-* No external dependencies required
-
-To confirm installation:
-
-```bash
-python -c "import bst_id; print('Installed:', bst_id)"
-```
-
----
-
 ## 🚀 Features
 
 ### 1. `BSTIDEncoder.encode()`
