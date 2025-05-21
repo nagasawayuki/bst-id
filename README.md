@@ -39,6 +39,9 @@ Returns `True` if two BST-IDs intersect at any shared resolution (Intersection).
 
 Returns a human-readable string representation of a BST-ID, broken into flags/headers/values.
 
+### 6. `iso8601_to_unix_time()` / `unix_time_to_iso8601()`
+
+Utility functions for time encoding/decoding.
 
 ---
 
@@ -89,7 +92,9 @@ from bst_id.logic import id_separate
 print("Readable ID:", id_separate(bst_id))
 ```
 
-
 ---
+
+
+
 
 
