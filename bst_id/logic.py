@@ -53,53 +53,91 @@ def get_common_prefix_id(id1: int, id2: int) -> int:
             v1, v2 = v1s[axis], v2s[axis]
             z = min(z1, z2)
             for j in range(z):
-                shift1 = z1 - j
-                shift2 = z2 - j
-                if (v1 >> (z1 - j - 1)) & 1 != (v2 >> (z2 - j - 1)) & 1:
+                if ((v1 >> (z1 - j - 1)) & 1) != ((v2 >> (z2 - j - 1)) & 1):
                     break
                 value = (value << 1) | ((v1 >> (z1 - j - 1)) & 1)
-                header = j  # jは0-indexなので、ビット長−1を意味する
+                header = j
                 flag = 1
         flags[axis] = flag
         headers[axis] = header
         values[axis] = value
 
-    # flags
-    flag_x = flags['x']
-    flag_y = flags['y']
-    flag_f = flags['f']
-    flag_t = flags['t']
+    flags_int = (flags['x'] << 3) | (flags['y'] << 2) | (flags['f'] << 1) | flags['t']
 
-    # headers (5 bit)
-    header_x = headers['x']
-    header_y = headers['y']
-    header_f = headers['f']
-    header_t = headers['t']
+    zooms = {}
+    vals = {}
+    for axis in axes:
+        if flags[axis]:
+            zooms[axis] = headers[axis] + 1
+            vals[axis] = values[axis]
 
-    # values
-    x = values['x']
-    y = values['y']
-    f = values['f']
-    t = values['t']
+    return build_bst_id(flags_int, zooms, vals)
 
-    # 結果を順に並べてビット列にする
-    result = 0
-    result = (result << 1) | flag_x
-    result = (result << 1) | flag_y
-    result = (result << 1) | flag_f
-    result = (result << 1) | flag_t
+# def get_common_prefix_id(id1: int, id2: int) -> int:
+#     f1, z1s, v1s = parse_bst_id(id1)
+#     f2, z2s, v2s = parse_bst_id(id2)
 
-    result = (result << 5) | header_x
-    result = (result << 5) | header_y
-    result = (result << 5) | header_f
-    result = (result << 5) | header_t
+#     axes = ['x', 'y', 'f', 't']
+#     flags = {}
+#     headers = {}
+#     values = {}
 
-    if flag_x: result = (result << (header_x + 1)) | x
-    if flag_y: result = (result << (header_y + 1)) | y
-    if flag_f: result = (result << (header_f + 1)) | f
-    if flag_t: result = (result << (header_t + 1)) | t
+#     for i, axis in enumerate(axes):
+#         flag = 0
+#         header = 0
+#         value = 0
+#         if (f1 >> (3 - i)) & 1 and (f2 >> (3 - i)) & 1:
+#             z1, z2 = z1s[axis], z2s[axis]
+#             v1, v2 = v1s[axis], v2s[axis]
+#             z = min(z1, z2)
+#             for j in range(z):
+#                 shift1 = z1 - j
+#                 shift2 = z2 - j
+#                 if (v1 >> (z1 - j - 1)) & 1 != (v2 >> (z2 - j - 1)) & 1:
+#                     break
+#                 value = (value << 1) | ((v1 >> (z1 - j - 1)) & 1)
+#                 header = j  # jは0-indexなので、ビット長−1を意味する
+#                 flag = 1
+#         flags[axis] = flag
+#         headers[axis] = header
+#         values[axis] = value
 
-    return bin(result)
+#     # flags
+#     flag_x = flags['x']
+#     flag_y = flags['y']
+#     flag_f = flags['f']
+#     flag_t = flags['t']
+
+#     # headers (5 bit)
+#     header_x = headers['x']
+#     header_y = headers['y']
+#     header_f = headers['f']
+#     header_t = headers['t']
+
+#     # values
+#     x = values['x']
+#     y = values['y']
+#     f = values['f']
+#     t = values['t']
+
+#     # 結果を順に並べてビット列にする
+#     result = 0
+#     result = (result << 1) | flag_x
+#     result = (result << 1) | flag_y
+#     result = (result << 1) | flag_f
+#     result = (result << 1) | flag_t
+
+#     result = (result << 5) | header_x
+#     result = (result << 5) | header_y
+#     result = (result << 5) | header_f
+#     result = (result << 5) | header_t
+
+#     if flag_x: result = (result << (header_x + 1)) | x
+#     if flag_y: result = (result << (header_y + 1)) | y
+#     if flag_f: result = (result << (header_f + 1)) | f
+#     if flag_t: result = (result << (header_t + 1)) | t
+
+#     return bin(result)
 
 
 # ======== 交差判定（Intersection） ========
