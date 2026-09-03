@@ -1,0 +1,17 @@
+test,cases,passed,failed,seconds
+1D exhaustive Boolean (depth 1-5),7688,7688,0,0.2284
+2D exhaustive Boolean (depth 1-2),3888,3888,0,0.1751
+3D randomized Boolean,4500,4500,0,0.3638
+4D randomized Boolean,3000,3000,0,0.5494
+1D normalization properties,4000,4000,0,0.079
+2D normalization properties,3200,3200,0,0.1337
+3D normalization properties,1600,1600,0,0.1138
+4D normalization properties,800,800,0,0.105
+1D refine/coarsen properties,2000,2000,0,0.0115
+2D refine/coarsen properties,1600,1600,0,0.0182
+3D refine/coarsen properties,800,800,0,0.0117
+4D refine/coarsen properties,400,400,0,0.0056
+1D morphology/frontier reference semantics + closure,1800,1800,0,0.4578
+2D morphology/frontier reference semantics + closure,1200,1200,0,4.6835
+XYHT Cell descriptor -> BST-ID int -> descriptor,2000,2000,0,0.0211
+XYHT reserved-route descendant membership,256,256,0,0.0008
