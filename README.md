@@ -28,11 +28,16 @@ Decodes a BST-ID back into (x, y, f, t) values.
 
 ### 3. `get_common_prefix_id()`
 
-Returns the coarsest shared voxel between two BST-IDs (Union).
+Cell-level primitive: returns the coarsest single cell whose prefix is shared by
+two BST-IDs (common-prefix extraction). This is loosely called "Union" below, but
+it is *not* the set-theoretic union of two regions — see the note after the
+examples.
 
 ### 4. `is_match()`
 
-Returns `True` if two BST-IDs intersect at any shared resolution (Intersection).
+Cell-level primitive: returns `True` if two BST-IDs overlap at any shared
+resolution (an overlap predicate on two cells). Loosely called "Intersection"
+below; it is *not* the set-theoretic intersection of two regions.
 
 ### 5. `id_separate()`
 
@@ -134,9 +139,40 @@ print("Intersect:", is_match(id1, id2))
 Intersect: True
 ```
 
-
 ---
 
+## 🧮 Cell-level primitives vs. region-level set algebra
+
+`get_common_prefix_id()` and `is_match()` operate on **single cells**:
+
+- `get_common_prefix_id()` extracts the longest common hierarchical prefix of two
+  cells (a coarsest containing cell).
+- `is_match()` tests whether two cells overlap.
+
+Set-theoretic operations on **regions** (sets of cells) live in
+`bst_id.region_algebra`: `union`, `intersection` (anisotropic `meet` per axis),
+`difference`, plus `normalize`, `refine`/`coarsen`, `contains`, and the
+carry/borrow neighbor primitives (`neighbor_axis`, `offset_cell`, `prefix_dilate`,
+…). These return normalized cell sets and are validated against dense
+working-grid oracles.
+
+Do not read the example headings "Union" / "Intersection" as the set-theoretic
+operators; those are `region_algebra.union` / `region_algebra.intersection`.
+
+## 📄 Journal artifacts
+
+`journal/` holds the material backing the region-algebra section of the
+manuscript: the reference validation harness (`run_bst_validation.py`), its
+result tables (`validation_summary.csv`, `validation_results.json`,
+`complexity_curves.csv`), the figures, and the handoff notes. Rerun from the
+repository root with:
+
+```bash
+python journal/run_bst_validation.py
+```
+
+The current snapshot reports **38,732** checks with **0** failures. `pytest -q`
+covers the focused region-algebra and serialization suites.
 
 
 
