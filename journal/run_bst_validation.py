@@ -1,6 +1,6 @@
 from pathlib import Path
 import sys, random, time, json, csv, math
-root=Path('/mnt/data/bst-id-src/bst-id-main'); sys.path.insert(0,str(root))
+root=Path(__file__).resolve().parent.parent; sys.path.insert(0,str(root))
 from bst_id.region_algebra import *
 from bst_id.encoder import BSTIDEncoder
 from bst_id.decoder import BSTIDDecoder
@@ -154,7 +154,7 @@ for D in range(1,5):
   K=2*D*delta
   complexity.append({'D':D,'delta':delta,'G_full_atoms':G,'K_selective_generated':K,'ratio_G_over_K':G/K})
 
-outdir=Path('/mnt/data/bst_id_validation_final'); outdir.mkdir(exist_ok=True)
+outdir=Path(__file__).resolve().parent; outdir.mkdir(exist_ok=True)
 with open(outdir/'validation_results.json','w') as f: json.dump({'results':results,'failures':failures,'complexity':complexity},f,indent=2,default=str)
 with open(outdir/'validation_summary.csv','w',newline='') as f:
  wri=csv.DictWriter(f,fieldnames=['test','cases','passed','failed','seconds']); wri.writeheader(); wri.writerows(results)
