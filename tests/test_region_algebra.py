@@ -4,6 +4,10 @@ from bst_id.region_algebra import (
     Cell, compatible, subsumes, meet, refine_axis, normalize,
     intersection, difference, region_atoms, semantic_equal,
     dense_intersection_oracle, dense_difference_oracle, contains,
+    neighbor_axis,
+    offset_cell,
+    neighbor_membership,
+    prefix_dilate,
 )
 
 
@@ -86,3 +90,54 @@ def test_reserved_route_membership_example():
     reserved = c2('101', '0110')
     current = c2('10110', '011011')
     assert contains([reserved], current)
+
+
+def test_neighbor_axis_carry_and_borrow():
+    a = Cell.from_parts(x=(3, 0b011))
+    assert neighbor_axis(a, "x", +1).descriptor("x") == (3, 0b100)
+
+    b = Cell.from_parts(x=(3, 0b100))
+    assert neighbor_axis(b, "x", -1).descriptor("x") == (3, 0b011)
+
+    c = Cell.from_parts(x=(8, 0b01111011))
+    assert neighbor_axis(c, "x", +1).descriptor("x") == (8, 0b01111100)
+
+    d = Cell.from_parts(x=(9, 0b100010100))
+    assert neighbor_axis(d, "x", -1).descriptor("x") == (9, 0b100010011)
+
+
+def test_neighbor_axis_boundary_policies():
+    lo = Cell.from_parts(x=(3, 0))
+    hi = Cell.from_parts(x=(3, 7))
+    assert neighbor_axis(lo, "x", -1, boundary="reject") is None
+    assert neighbor_axis(hi, "x", +1, boundary="reject") is None
+    assert neighbor_axis(lo, "x", -1, boundary="wrap").descriptor("x") == (3, 7)
+    assert neighbor_axis(hi, "x", +1, boundary="wrap").descriptor("x") == (3, 0)
+    assert neighbor_axis(lo, "x", -1, boundary="clamp").descriptor("x") == (3, 0)
+    assert neighbor_axis(hi, "x", +1, boundary="clamp").descriptor("x") == (3, 7)
+
+
+def test_multiaxis_offset_uses_independent_carry_borrow():
+    c = Cell.from_parts(x=(3, 0b011), y=(4, 0b1000))
+    q = offset_cell(c, {"x": +1, "y": -1})
+    assert q.descriptor("x") == (3, 0b100)
+    assert q.descriptor("y") == (4, 0b0111)
+
+
+def test_neighbor_membership_across_coarse_fine_boundary():
+    region = [Cell.from_parts(x=(2, 0b10))]
+    query = Cell.from_parts(x=(3, 0b011))
+    result = neighbor_membership(region, query, [{"x": +1}])
+    assert result[(("x", 1),)] is True
+
+
+def test_prefix_dilate_is_hierarchy_aligned_and_closed():
+    r = [Cell.from_parts(x=(3, 0b011))]
+    out = prefix_dilate(r, [{"x": -1}, {"x": +1}])
+    expected = [
+        Cell.from_parts(x=(3, 0b010)),
+        Cell.from_parts(x=(3, 0b011)),
+        Cell.from_parts(x=(3, 0b100)),
+    ]
+    assert semantic_equal(out, expected, {"x": 3})
+    assert normalize(out) == out

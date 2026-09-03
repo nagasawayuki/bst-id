@@ -332,3 +332,114 @@ def semantic_equal(a: Iterable[Cell], b: Iterable[Cell], working_zoom: Mapping[s
 def contains(region: Iterable[Cell], query: Cell) -> bool:
     """Prefix membership: true when one region prefix subsumes query."""
     return any(subsumes(r, query) for r in region)
+
+
+# ---------------------------------------------------------------------------
+# Binary carry/borrow neighborhood primitives
+# ---------------------------------------------------------------------------
+
+def neighbor_axis(
+    cell: Cell,
+    axis: int | str,
+    step: int,
+    *,
+    boundary: str = "reject",
+) -> Optional[Cell]:
+    """Return the same-zoom neighbor along one BST-ID axis.
+
+    The payload is treated as a fixed-width unsigned integer. Integer
+    addition/subtraction therefore performs the carry/borrow required to cross
+    binary subtree boundaries, e.g. 011 + 1 -> 100 and 100 - 1 -> 011.
+
+    boundary:
+        "reject" -> return None outside the finite z-bit domain
+        "wrap"   -> modulo 2**z
+        "clamp"  -> clamp to [0, 2**z - 1]
+    """
+    i = AXES.index(axis) if isinstance(axis, str) else axis
+    if not cell.active(i):
+        raise ValueError(f"axis {AXES[i]} is not active")
+    z, value = cell.zooms[i], cell.values[i]
+    limit = 1 << z
+    nxt = value + step
+
+    if boundary == "wrap":
+        nxt %= limit
+    elif boundary == "clamp":
+        nxt = min(max(nxt, 0), limit - 1)
+    elif boundary == "reject":
+        if nxt < 0 or nxt >= limit:
+            return None
+    else:
+        raise ValueError("boundary must be 'reject', 'wrap', or 'clamp'")
+
+    return cell.replace_axis(i, z, nxt)
+
+
+def offset_cell(
+    cell: Cell,
+    offsets: Mapping[str, int],
+    *,
+    boundary: Optional[Mapping[str, str]] = None,
+) -> Optional[Cell]:
+    """Apply independent same-zoom integer offsets to active axes."""
+    out = cell
+    policies = boundary or {}
+    for axis, step in offsets.items():
+        if step == 0:
+            continue
+        out = neighbor_axis(out, axis, step, boundary=policies.get(axis, "reject"))
+        if out is None:
+            return None
+    return out
+
+
+def neighbor_set(
+    cell: Cell,
+    offsets: Iterable[Mapping[str, int]],
+    *,
+    boundary: Optional[Mapping[str, str]] = None,
+) -> Tuple[Cell, ...]:
+    """Generate accepted same-zoom neighbors for an offset set."""
+    out = []
+    for delta in offsets:
+        q = offset_cell(cell, delta, boundary=boundary)
+        if q is not None:
+            out.append(q)
+    return tuple(out)
+
+
+def prefix_dilate(
+    region: Iterable[Cell],
+    offsets: Iterable[Mapping[str, int]],
+    *,
+    boundary: Optional[Mapping[str, str]] = None,
+    include_original: bool = True,
+) -> Tuple[Cell, ...]:
+    """Hierarchy-aligned same-scale expansion by prefix-neighbor generation.
+
+    This is intentionally distinct from fixed-metric/working-grid morphology:
+    expansion uses each source prefix's own scale. It is therefore a cheap
+    hierarchy-aligned outer expansion, not a fixed physical-distance dilation.
+    """
+    cells = list(normalize(region))
+    out = list(cells) if include_original else []
+    for c in cells:
+        out.extend(neighbor_set(c, offsets, boundary=boundary))
+    return normalize(out)
+
+
+def neighbor_membership(
+    region: Iterable[Cell],
+    query: Cell,
+    offsets: Iterable[Mapping[str, int]],
+    *,
+    boundary: Optional[Mapping[str, str]] = None,
+) -> Dict[Tuple[Tuple[str, int], ...], bool]:
+    """Check whether generated query-neighbors are covered by region prefixes."""
+    ans: Dict[Tuple[Tuple[str, int], ...], bool] = {}
+    for delta in offsets:
+        key = tuple(sorted(delta.items()))
+        q = offset_cell(query, delta, boundary=boundary)
+        ans[key] = False if q is None else contains(region, q)
+    return ans
